@@ -1,0 +1,24 @@
+# MATLAB autosave and temporary files
+*.asv
+*.m~
+*.slxc
+mex*
+
+# Large trained model files (keep directory tracked)
+models/*.mat
+!models/.gitkeep
+
+# Generated output and results
+results/*.png
+results/*.csv
+results/*.mat
+!results/.gitkeep
+results/batch/
+
+# Dataset images (do not commit raw datasets into git)
+dataset/tomato/Healthy/*
+!dataset/tomato/Healthy/.gitkeep
+dataset/tomato/Early_Blight/*
+!dataset/tomato/Early_Blight/.gitkeep
+dataset/tomato/Late_Blight/*
+!dataset/tomato/Late_Blight/.gitkeep

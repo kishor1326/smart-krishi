@@ -9,7 +9,8 @@ if ~isfolder(cfg.datasetDir)
 end
 
 imds = imageDatastore(cfg.datasetDir, ...
-    IncludeSubfolders=true, LabelSource="foldernames");
+    IncludeSubfolders=true, LabelSource="foldernames", ...
+    FileExtensions=[".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"]);
 
 if numel(imds.Files) < 10
     error("Dataset is empty or too small. Put the tomato class folders inside: %s", cfg.datasetDir);

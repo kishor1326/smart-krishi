@@ -1,6 +1,14 @@
 function cfg = uzhavanConfig()
 % Central settings. Thresholds marked TUNE must be calibrated on YOUR phone photos.
-cfg.root       = fileparts(fileparts(mfilename('fullpath')));
+thisDir = fileparts(mfilename('fullpath'));
+parentDir = fileparts(thisDir);
+if isfolder(fullfile(thisDir,'dataset','tomato')) || isfolder(fullfile(thisDir,'models'))
+    cfg.root = thisDir;
+elseif isfolder(fullfile(parentDir,'dataset','tomato'))
+    cfg.root = parentDir;
+else
+    cfg.root = thisDir;
+end
 cfg.datasetDir = fullfile(cfg.root,'dataset','tomato');   % one sub-folder per class
 cfg.modelFile  = fullfile(cfg.root,'models','uzhavanNet.mat');
 cfg.resultsDir = fullfile(cfg.root,'results');
