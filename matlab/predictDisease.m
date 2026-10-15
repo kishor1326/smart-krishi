@@ -56,7 +56,7 @@ title(sprintf('3. Visible damage = %.1f%% of leaf',100*seg.lesionFraction));
 nexttile; imshow(cam); title('4. Grad-CAM: where the model looked');
 nexttile;
 if ~isempty(res.top)
-    b = barh(flipud([res.top.prob]')); yticks(1:numel(res.top)); yticklabels(flipud(strrep({res.top.label}','_',' ')));
+    b = barh(flipud([res.top.prob]')); yticks(1:numel(res.top)); yticklabels(flipud(strrep(string({res.top.label}), "_", " ")));
     xlim([0 1]); xlabel('Probability'); title('5. Top predictions');
 else, axis off; text(0.1,0.5,'No prediction (image rejected)'); end
 nexttile; axis off;

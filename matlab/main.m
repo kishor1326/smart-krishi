@@ -1,17 +1,73 @@
-%% Uzhavan AI - MATLAB Crop Health Engine (final-round module)
-% Run section by section. Requires: Image Processing, Deep Learning, Statistics & ML Toolboxes
-% + "Deep Learning Toolbox Model for ResNet-18 Network" support package (Add-On Explorer).
-addpath(fileparts(mfilename('fullpath')));
-%% 1. Train (put tomato class folders in dataset/tomato first)
-trainModel;
-%% 2. Evaluate on held-out split (accuracy, P/R/F1, confusion matrix, latency)
-M = evaluateModel;
-%% 3. Single image (writes results/panel.png)
-res = predictDisease(fullfile(fileparts(fileparts(mfilename('fullpath'))),'samples','leaf1.jpg'));
-disp(res); imshow(fullfile(uzhavanConfig().resultsDir,'panel.png'));
-%% 4. Batch (use YOUR OWN phone photos to report real-world behaviour)
-% T = batchPredict(fullfile(uzhavanConfig().root,'samples'));
-%% 5. Irrigation what-if
-simulateIrrigation;                              % baseline
-simulateIrrigation('irrigMult',0.8);             % what if irrigation -20%
-simulateIrrigation('rainMult',1.5);              % what if rainfall +50%
+function main()
+% Uzhavan AI - Tomato Disease Detection Demo
+% Uses an existing trained model; does NOT retrain automatically.
+
+clc;
+close all;
+
+cfg = uzhavanConfig();
+
+% Check that the trained model exists
+if ~isfile(cfg.modelFile)
+    error("Trained model not found: %s. Run trainModel once first.", ...
+        cfg.modelFile);
+end
+
+% Select a tomato leaf image
+[file, folder] = uigetfile( ...
+    {'*.jpg;*.jpeg;*.png;*.bmp;*.tif;*.tiff', ...
+    'Tomato leaf images (*.jpg, *.jpeg, *.png, *.bmp, *.tif, *.tiff)'}, ...
+    'Select a tomato leaf image');
+
+% Stop if the user cancels
+if isequal(file, 0)
+    disp("Image selection cancelled.");
+    return;
+end
+
+imgPath = fullfile(folder, file);
+
+fprintf("\nSelected image: %s\n", imgPath);
+fprintf("Running disease prediction...\n");
+
+% Run the trained model
+res = predictDisease(imgPath);
+
+% Display key results
+fprintf("\n========== UZHAVAN AI RESULT ==========\n");
+fprintf("Status     : %s\n", char(res.status));
+
+if isfield(res, 'condition') && strlength(res.condition) > 0
+    fprintf("Prediction : %s\n", ...
+        char(strrep(res.condition, "_", " ")));
+end
+
+if isfield(res, 'confidence') && ~isnan(res.confidence)
+    fprintf("Confidence : %.2f%%\n", 100 * res.confidence);
+end
+
+if isfield(res, 'health') && isstruct(res.health) ...
+        && isfield(res.health, 'score')
+    fprintf("Health index: %d/100\n", res.health.score);
+end
+
+if isfield(res, 'messageEn') && strlength(res.messageEn) > 0
+    fprintf("Message    : %s\n", char(res.messageEn));
+end
+
+fprintf("Time       : %.2f seconds\n", res.timeSec);
+fprintf("=======================================\n\n");
+
+% Open the generated result panel
+panelFile = fullfile(cfg.resultsDir, 'panel.png');
+
+if isfile(panelFile)
+    figure('Name', 'Uzhavan AI - Prediction Result');
+    imshow(imread(panelFile));
+    title('Uzhavan AI - Tomato Disease Detection');
+else
+    warning("Prediction completed, but panel.png was not found: %s", ...
+        panelFile);
+end
+
+end
