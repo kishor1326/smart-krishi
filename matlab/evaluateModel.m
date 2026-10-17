@@ -10,15 +10,60 @@ for k = 1:n
 end
 truth = categorical(T.testLabels, classes); predC = categorical(pred, classes);
 C = confusionmat(truth, predC);
-tp = diag(C); prec = tp./max(sum(C,1)',1); rec = tp./max(sum(C,2),1); f1 = 2*prec.*rec./max(prec+rec,eps);
-M.accuracy = sum(tp)/sum(C(:));
-M.perClass = table(string(classes), prec, rec, f1, sum(C,2), 'VariableNames',{'Class','Precision','Recall','F1','Support'});
-M.macroF1 = mean(f1); M.medianInferenceMs = median(ms(2:end)); M.meanConfidence = mean(conf);
+% Identify incorrectly classified test images
+misIdx = (truth ~= predC);
+
+misclassified = table( ...
+    string(T.testFiles(misIdx)), ...
+    string(truth(misIdx)), ...
+    pred(misIdx), ...
+    conf(misIdx), ...
+    'VariableNames', ...
+    {'ImagePath','ActualClass','PredictedClass','Confidence'});
+
+disp("===== MISCLASSIFIED TEST IMAGES =====");
+disp(misclassified);
+
+% Calculate evaluation metrics
+tp = diag(C);
+prec = tp ./ max(sum(C,1)', 1);
+rec = tp ./ max(sum(C,2), 1);
+f1 = 2 .* prec .* rec ./ max(prec + rec, eps);
+
+M.accuracy = sum(tp) / sum(C(:));
+M.perClass = table(string(classes), prec, rec, f1, sum(C,2), ...
+    'VariableNames', {'Class','Precision','Recall','F1','Support'});
+
+M.macroF1 = mean(f1);
+M.medianInferenceMs = median(ms(2:end));
+M.meanConfidence = mean(conf);
 M.fractionBelowThreshold = mean(conf < cfg.minConfidence);
-disp(M.perClass); fprintf('Test accuracy %.2f%% | macro-F1 %.3f | median %.1f ms/img (excl. warm-up)\n', 100*M.accuracy, M.macroF1, M.medianInferenceMs);
+
+disp(M.perClass);
+
+fprintf('Test accuracy %.2f%% | macro-F1 %.3f | median %.1f ms/img\n', ...
+    100*M.accuracy, M.macroF1, M.medianInferenceMs);
+
+save(fullfile(cfg.resultsDir, 'metrics.mat'), 'M');
+
+% Save confusion matrix figure
 f = figure('Visible','off','Position',[100 100 900 800]);
-confusionchart(truth, predC, 'RowSummary','row-normalized','ColumnSummary','column-normalized');
-title('Test-set confusion matrix (lab-style held-out split)');
-exportgraphics(f, fullfile(cfg.resultsDir,'confusion_matrix.png'),'Resolution',150); close(f);
-save(fullfile(cfg.resultsDir,'metrics.mat'),'M');
-end
+
+confusionchart(truth, predC, ...
+    'RowSummary','row-normalized', ...
+    'ColumnSummary','column-normalized');
+
+title('Test-set confusion matrix (held-out split)');
+
+exportgraphics(f, ...
+    fullfile(cfg.resultsDir, 'confusion_matrix.png'), ...
+    'Resolution', 150);
+
+close(f);
+
+% Save incorrect predictions for further analysis
+writetable(misclassified, ...
+    fullfile(cfg.resultsDir, 'misclassified_images.csv'));
+
+fprintf("Misclassified images: %d out of %d\n", ...
+    sum(misIdx), n);

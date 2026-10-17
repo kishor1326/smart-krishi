@@ -1,5 +1,6 @@
 function js = predictDiseaseJSON(imgPath, outDir)
-% Entry point called from Python (MATLAB Engine). Always returns a JSON string.
+% Entry point called from Python or batch. Always returns a JSON string.
+if nargin < 2, outDir = []; end
 try
     js = jsonencode(predictDisease(imgPath, outDir));
 catch ME
